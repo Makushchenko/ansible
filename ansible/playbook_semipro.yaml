@@ -1,0 +1,81 @@
+- name: Install Apache
+  hosts : "{{ hosts }}"
+  become: yes
+
+  vars:
+    source_folder_redhat: ./assets_redhat
+    source_folder_debian: ./assets_debian
+    destination_folder  : /var/www/html
+    for_text            : ansible_all_ipv4_addresses
+
+  tasks:
+
+  - block: #----REDHAT---- 
+      - name: Install Apache Web Server for RedHat
+        yum : name=httpd state=latest
+
+      - name: Start Apache server and make it enable on boot for RedHat
+        service: name=httpd state=started enabled=yes
+    when: ansible_os_family == "RedHat"
+
+  - block: #----DEBIAN----
+      - name: Install Apache Web Server for Debian
+        apt : name=apache2 state=latest   
+
+      - name: Copy new files for Debian
+        copy: src={{ item }} dest={{ destination_folder }}
+        with_fileglob: "{{ source_folder_debian }}/*.*"
+        notify: Restart Apache for Debian
+
+      - name: Start Apache server and make it enable on boot for Debian
+        service: name=apache2 state=started enabled=yes
+
+    when: ansible_os_family == "Debian"     
+  
+  - name: Copy bootstraped index.html
+    template: src={{ source_folder_redhat }}/index.j2 dest={{ destination_folder }}/index.html
+    notify:
+      - Restart Apache for RedHat
+      - Restart Apache for Debian
+
+  - name: Copy new files all servers
+    copy  : src={{ source_folder_redhat }}/{{ item }} dest={{ destination_folder }}
+    loop:
+      - "file111.txt"
+      - "file222.txt"
+      - "file333.txt"
+      - "file444.txt"
+    notify:
+      - Restart Apache for RedHat
+      - Restart Apache for Debian
+  
+  - name: Create folder
+    include_tasks: create_folders.yaml
+
+  - name: Create files
+    include_tasks: create_files.yaml
+
+  - shell: uptime
+    register: results
+      
+  - debug:
+      var: ansible_system
+  
+  - debug:
+      var: ansible_all_ipv4_addresses
+  
+  - debug:
+      var: results
+  
+  - name: OS Family
+    debug: var=ansible_os_family
+
+  handlers:
+  - name: Restart Apache for RedHat
+    service: name=httpd state=restarted
+    when: ansible_os_family == "RedHat"
+
+  - name: Restart Apache for Debian
+    service: name=apache2 state=restarted
+    when: ansible_os_family == "Debian"
+      

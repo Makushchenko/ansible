@@ -1,0 +1,8 @@
+- name: Create file
+  copy:
+    dest: /home/ubuntu/test_folder/file1234.txt
+    content: |
+      Line 1
+      Line 2
+      Line 3 / {{ for_text }}
+  when: ansible_os_family == "Debian"

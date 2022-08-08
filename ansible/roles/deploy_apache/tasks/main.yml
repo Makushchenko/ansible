@@ -1,0 +1,50 @@
+---
+# tasks file for deploy_apache
+- block: #----REDHAT---- 
+    - name: Install Apache Web Server for RedHat
+      yum : name=httpd state=latest
+
+    - name: Start Apache server and make it enable on boot for RedHat
+      service: name=httpd state=started enabled=yes
+  when: ansible_os_family == "RedHat"
+
+- block: #----DEBIAN----
+    - name: Install Apache Web Server for Debian
+      apt : name=apache2 state=latest   
+
+    - name: Start Apache server and make it enable on boot for Debian
+      service: name=apache2 state=started enabled=yes
+
+  when: ansible_os_family == "Debian"     
+
+- name: Copy bootstraped index.html
+  template: src=index.j2 dest={{ destination_folder }}/index.html
+  notify:
+    - Restart Apache for RedHat
+    - Restart Apache for Debian
+
+- name: Copy new files all servers
+  copy  : src={{ item }} dest={{ destination_folder }}
+  loop:
+    - "file111.txt"
+    - "file222.txt"
+    - "file333.txt"
+    - "file444.txt"
+  notify:
+    - Restart Apache for RedHat
+    - Restart Apache for Debian
+
+- shell: uptime
+  register: results
+    
+- debug:
+    var: ansible_system
+
+- debug:
+    var: ansible_all_ipv4_addresses
+
+- debug:
+    var: results
+
+- name: OS Family
+  debug: var=ansible_os_family

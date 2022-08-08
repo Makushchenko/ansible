@@ -1,0 +1,13 @@
+[prod_servers]
+prod1  ansible_host=54.158.133.109
+prod2  ansible_host=23.21.14.9
+
+[qa_servers]
+qa1  ansible_host=54.242.17.142
+
+[dev_servers]
+dev1  ansible_host=54.159.117.124
+
+[redhat_servers:children]
+prod_servers
+qa_servers
